@@ -1,31 +1,40 @@
 /**
  * Camera
- * Follows the player horizontally. All world objects use worldX;
- * call toScreenX() before drawing.
+ * Follows the player horizontally with a configurable zoom scale.
+ * Scale is derived from canvas width so narrow/portrait screens zoom out automatically.
  */
 export class Camera {
   /**
    * @param {number} canvasWidth
-   * @param {number} followOffsetX  Screen X where the player is pinned (default: 220)
+   * @param {number} canvasHeight
+   * @param {number} referenceWidth  The design width the game was built for
    */
-  constructor(canvasWidth, followOffsetX = 220) {
-    this.x             = 0;   // world X of the LEFT edge of the screen
-    this.canvasWidth   = canvasWidth;
-    this.followOffsetX = followOffsetX;
+  constructor(canvasWidth, canvasHeight, referenceWidth = 800) {
+    this.canvasWidth  = canvasWidth;
+    this.canvasHeight = canvasHeight;
+
+    // scale < 1 = zoomed out (mobile portrait), scale > 1 = zoomed in (wide screen)
+    this.scale = canvasWidth / referenceWidth;
+
+    // Screen X where the player is pinned (before scale)
+    this.followOffsetX = canvasWidth * 0.3;
+
+    this.x = 0; // world X of the left edge of the screen
+    this.y = 0;
   }
 
-  /** Update camera to keep worldX at the follow offset */
+  /** Keep player's world X at followOffsetX on screen */
   follow(worldX) {
-    this.x = worldX - this.followOffsetX;
+    this.x = worldX - (this.followOffsetX / this.scale);
   }
 
-  /** Convert a world X coordinate to a screen X coordinate */
+  /** World -> screen X */
   toScreenX(worldX) {
-    return worldX - this.x;
+    return (worldX - this.x) * this.scale;
   }
 
-  /** Y is untouched (no vertical camera movement for now) */
+  /** World -> screen Y */
   toScreenY(worldY) {
-    return worldY;
+    return worldY * this.scale;
   }
 }

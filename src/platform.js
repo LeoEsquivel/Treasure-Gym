@@ -14,7 +14,7 @@ export class Platform {
     this.worldY  = worldY;
     this.width   = width;
     this.height  = height;
-    this.landed  = false;
+    this.landed  = false; 
   }
 
   get top()   { return this.worldY; }
@@ -29,6 +29,6 @@ export class Platform {
     const sx = camera.toScreenX(this.worldX);
     const sy = camera.toScreenY(this.worldY);
     ctx.fillStyle = this.landed ? "#4a9" : "#fff";
-    ctx.fillRect(sx, sy, this.width, this.height);
+    ctx.fillRect(sx, sy, this.width * camera.scale, this.height * camera.scale);
   }
 }

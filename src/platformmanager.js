@@ -2,27 +2,37 @@ import { Platform } from "./platform.js";
 
 /**
  * PlatformManager
- * Generates, recycles and draws platforms in world space.
- * Camera is passed in at draw time only.
+ * All coordinates are in world space.
+ * Gaps and platform sizes are derived from the effective visible world
  */
 export class PlatformManager {
   /**
    * @param {number} canvasWidth
    * @param {number} canvasHeight
+   * @param {import('./camera.js').Camera} camera
    */
-  constructor(canvasWidth, canvasHeight) {
+  constructor(canvasWidth, canvasHeight, camera) {
     this.canvasWidth  = canvasWidth;
     this.canvasHeight = canvasHeight;
 
+    // Effective world dimensions (what the player actually sees)
+    const worldW = canvasWidth  / camera.scale;
+    const worldH = canvasHeight / camera.scale;
+
+    const platW  = Math.round(worldW * 0.18);  // ~18% of visible width
+    const minGapX = Math.round(worldW * 0.22); // min jump reaches this
+    const maxGapX = Math.round(worldW * 0.40); // max jump overshoots this
+    const gapY    = Math.round(worldH * 0.15); // vertical variance ~15% of height
+
     this.config = {
-      platformWidth  : 120,
+      platformWidth  : platW,
       platformHeight : 16,
-      minGapX        : 180,  // horizontal gap between platform right edges
-      maxGapX        : 320,
-      minGapY        : -90,  // vertical offset relative to last platform
-      maxGapY        : 90,
-      floorY         : canvasHeight - 80,
-      minY           : 80,
+      minGapX,
+      maxGapX,
+      minGapY        : -gapY,
+      maxGapY        :  gapY,
+      floorY         : Math.round(worldH * 0.82),
+      minY           : Math.round(worldH * 0.12),
     };
 
     /** @type {Platform[]} */
@@ -33,7 +43,7 @@ export class PlatformManager {
   _spawnInitial() {
     const { floorY, platformWidth, platformHeight } = this.config;
     // Wide starting platform
-    this.platforms.push(new Platform(80, floorY, platformWidth * 1.5, platformHeight));
+    this.platforms.push(new Platform(80, floorY, Math.round(platformWidth * 1.5), platformHeight));
     for (let i = 0; i < 8; i++) this._spawnNext();
   }
 
@@ -44,26 +54,21 @@ export class PlatformManager {
   _spawnNext() {
     const { platformWidth, platformHeight, minGapX, maxGapX, minGapY, maxGapY, floorY, minY } = this.config;
     const last = this._last();
-
     const gapX = minGapX + Math.random() * (maxGapX - minGapX);
     const gapY = minGapY + Math.random() * (maxGapY - minGapY);
-
-    const x = last.right + gapX;
-    const y = Math.max(minY, Math.min(floorY, last.worldY + gapY));
-
+    const x    = last.right + gapX;
+    const y    = Math.max(minY, Math.min(floorY, last.worldY + gapY));
     this.platforms.push(new Platform(x, y, platformWidth, platformHeight));
   }
 
   /**
-   * Prune off-screen platforms (behind camera) and spawn ahead.
+   * Prune platforms behind camera and spawn ahead.
    * @param {import('./camera.js').Camera} camera
    */
   update(camera) {
-    // Remove platforms far behind the camera
     this.platforms = this.platforms.filter(p => p.right > camera.x - 200);
-
-    // Keep platforms generated well ahead
-    while (this._last().worldX < camera.x + this.canvasWidth + 600) {
+    const visibleWorldWidth = this.canvasWidth / camera.scale;
+    while (this._last().worldX < camera.x + visibleWorldWidth + 600) {
       this._spawnNext();
     }
   }

@@ -5,8 +5,8 @@ import { Camera }          from "./camera.js";
 
 /**
  * Game
- * Wires all subsystems. Player jumps with a parabola:
- * hold SPACE to charge, release to launch. More charge = longer/higher arc.
+ * Bootstraps the canvas and wires all subsystems together.
+ * Hold SPACE to charge, release to jump.
  */
 export class Game {
   constructor(canvasId) {
@@ -14,37 +14,46 @@ export class Game {
     this.ctx    = this.canvas.getContext("2d");
 
     this._resize();
-    window.addEventListener("resize", () => this._resize());
+    window.addEventListener("resize", () => {
+      this._resize();
+      this._initSystems();
+    });
 
-    // Subsystems
-    this.input           = new InputHandler();
-    this.camera          = new Camera(this.canvas.width);
-    this.platformManager = new PlatformManager(this.canvas.width, this.canvas.height);
-
-    // Place player on first platform
-    const first = this.platformManager.platforms[0];
-    first.landed = true; // starting platform doesn't score
-
-    this.player = new Player(
-      first.worldX + first.width / 2 - 16, // center on platform
-      first.top - 48
-    );
-
-    this.camera.follow(this.player.worldX);
-
-    this.score    = 0;
-    this.gameOver = false;
+    this.input = new InputHandler();
+    this._initSystems();
 
     this._lastTime = null;
     requestAnimationFrame((t) => this._loop(t));
   }
 
+  // --- Setup -----------------------------------------------------------------
+
   _resize() {
-    this.canvas.width  = Math.min(window.innerWidth,  900);
-    this.canvas.height = Math.min(window.innerHeight, 500);
+    this.canvas.width  = window.innerWidth;
+    this.canvas.height = window.innerHeight;
   }
 
-  // --- Loop -----------------------------------------------------------------
+  _initSystems() {
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+
+    this.camera          = new Camera(w, h);
+    this.platformManager = new PlatformManager(w, h, this.camera);
+
+    const first = this.platformManager.platforms[0];
+    first.landed = true; // starting platform doesn't score
+
+    this.player = new Player(
+      first.worldX + first.width / 2 - 16,
+      first.top - 48
+    );
+
+    this.camera.follow(this.player.worldX);
+    this.score    = 0;
+    this.gameOver = false;
+  }
+
+  // --- Loop ------------------------------------------------------------------
 
   _loop(timestamp) {
     if (this._lastTime === null) this._lastTime = timestamp;
@@ -58,28 +67,23 @@ export class Game {
     requestAnimationFrame((t) => this._loop(t));
   }
 
-  // --- Update ---------------------------------------------------------------
+  // --- Update ----------------------------------------------------------------
 
   _update(dt) {
     if (this.gameOver) {
-      if (this.input.isJustPressed("Space")) this._restart();
+      if (this.input.isJustPressed("Space")) this._initSystems();
       return;
     }
 
-    // Charge input
-    if (this.input.isJustPressed("Space"))   this.player.startCharge();
-    if (this.input.isJustReleased("Space"))  this.player.releaseJump();
+    if (this.input.isJustPressed("Space"))  this.player.startCharge();
+    if (this.input.isJustReleased("Space")) this.player.releaseJump();
 
-    // Player physics
-    this.player.update(dt, this.platformManager.platforms, this.canvas.height);
+    // Death boundary must be in world space, not screen space
+    const worldHeight = this.canvas.height / this.camera.scale;
+    this.player.update(dt, this.platformManager.platforms, worldHeight);
 
-    // Camera follows player
     this.camera.follow(this.player.worldX);
-
-    // Spawn/cull platforms relative to camera
     this.platformManager.update(this.camera);
-
-    // Score
     this._checkScore();
 
     if (this.player.isDead) this.gameOver = true;
@@ -104,7 +108,7 @@ export class Game {
     );
   }
 
-  // --- Draw -----------------------------------------------------------------
+  // --- Draw ------------------------------------------------------------------
 
   _draw() {
     const { ctx, canvas } = this;
@@ -113,19 +117,19 @@ export class Game {
     this.platformManager.draw(ctx, this.camera);
     this.player.draw(ctx, this.camera);
 
-    // HUD
+    // HUD — font scales with screen width
+    const fontSize = Math.max(14, Math.round(canvas.width * 0.045));
     ctx.fillStyle = "#fff";
-    ctx.font = "20px monospace";
-    ctx.fillText("Score: " + this.score, 16, 30);
-    ctx.fillText("Hold SPACE to charge, release to jump", 16, 54);
+    ctx.font = fontSize + "px monospace";
+    ctx.fillText("Score: " + this.score, 16, fontSize + 8);
+    ctx.fillText("Hold SPACE to charge, release to jump", 16, fontSize * 2 + 12);
 
-    // Charge hint while charging
     if (this.player.isCharging) {
-      const pct  = this.player.chargePct;
+      const pct   = this.player.chargePct;
       const label = pct < 0.4 ? "short" : pct < 0.75 ? "medium" : "FULL POWER";
       ctx.fillStyle = "#ff0";
-      ctx.font = "bold 18px monospace";
-      ctx.fillText("Charging... " + label, 16, 80);
+      ctx.font = "bold " + fontSize + "px monospace";
+      ctx.fillText("Charging... " + label, 16, fontSize * 3 + 16);
     }
 
     if (this.gameOver) {
@@ -133,32 +137,13 @@ export class Game {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.textAlign = "center";
       ctx.fillStyle = "#f44";
-      ctx.font = "bold 36px monospace";
+      ctx.font = "bold " + Math.round(canvas.width * 0.09) + "px monospace";
       ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
       ctx.fillStyle = "#fff";
-      ctx.font = "20px monospace";
-      ctx.fillText("Score: " + this.score + "  -  SPACE to restart", canvas.width / 2, canvas.height / 2 + 20);
+      ctx.font = fontSize + "px monospace";
+      ctx.fillText("Score: " + this.score + "  -  SPACE to restart", canvas.width / 2, canvas.height / 2 + 30);
       ctx.textAlign = "left";
     }
-  }
-
-  // --- Restart --------------------------------------------------------------
-
-  _restart() {
-    this.platformManager = new PlatformManager(this.canvas.width, this.canvas.height);
-    this.camera          = new Camera(this.canvas.width);
-
-    const first = this.platformManager.platforms[0];
-    first.landed = true;
-
-    this.player = new Player(
-      first.worldX + first.width / 2 - 16,
-      first.top - 48
-    );
-
-    this.camera.follow(this.player.worldX);
-    this.score    = 0;
-    this.gameOver = false;
   }
 }
 
