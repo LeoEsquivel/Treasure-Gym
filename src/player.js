@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { SoundManager } from "./sound_manager.js";
 
 /**
  * Player
@@ -16,11 +17,12 @@ export class Player {
     this.worldY = worldY;
     this.width  = 32;
     this.height = 48;
+    this._sounds  = new SoundManager();
 
     this.vx = 0;
     this.vy = 0;
 
-    this.isOnGround = false;
+    this.isOnGround = true;
     this.isDead     = false;
 
     // Charge state
@@ -107,6 +109,7 @@ export class Player {
             this.vy         = 0;
             this.vx         = 0;
             this.isOnGround = true;
+            this._sounds.point();
             break;
           }
         }
@@ -116,6 +119,7 @@ export class Player {
     // Fell out of the world
     if (this.worldY > worldHeight + 100) {
       this.isDead = true;
+      this._sounds.die();
     }
   }
 
