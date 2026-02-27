@@ -1,8 +1,10 @@
+import { config } from "./config.js";
+
 /**
  * Player
  * World-space position (worldX, worldY).
  * Jump is parabolic: hold to charge, release to launch.
- * Charge time controls both horizontal (vx) and vertical (vy) velocity.
+ * Charge time controls both horizontal (vx) and vertical (vy) velocity. gravity = px/s²
  */
 export class Player {
   /**
@@ -27,15 +29,6 @@ export class Player {
 
     // Physics
     this.gravity   = 1400; // px/s²
-
-    // Jump range calibrated so:
-    //   min charge reaches ~minGapX (doesn't fall short on min gap)
-    //   max charge overshoots ~maxGapX (falls into the void if over-charged)
-    this.minVx     = 260;
-    this.maxVx     = 700;
-    this.minVy     = -500;
-    this.maxVy     = -880;
-    this.maxCharge = 1.5; // seconds for full charge
   }
 
   // --- Accessors (world-space edges) ----------------------------------------
@@ -62,16 +55,18 @@ export class Player {
     if (!this.isCharging || !this.isOnGround || this.isDead) return false;
     this.isCharging = false;
 
-    const t = Math.min(this.chargeTime, this.maxCharge) / this.maxCharge; // 0..1
-    this.vx = this.minVx + t * (this.maxVx - this.minVx);
-    this.vy = this.minVy + t * (this.maxVy - this.minVy);
+    const maxCharge = config.get("maxCharge");
+    const t = Math.min(this.chargeTime, maxCharge) / maxCharge; // 0..1
+    
+    this.vx = config.get("minVx") + t * (config.get("maxVx") - config.get("minVx"));
+    this.vy = config.get("minVy") + t * (config.get("maxVy") - config.get("minVy"));
     this.isOnGround = false;
     return true;
   }
 
   /** Charge percentage 0..1 for the UI */
   get chargePct() {
-    return Math.min(this.chargeTime / this.maxCharge, 1);
+    return Math.min(this.chargeTime / config.get("maxCharge"), 1);
   }
 
   // --- Update ----------------------------------------------------------------
@@ -90,7 +85,7 @@ export class Player {
       // Save position BEFORE moving for sweep collision
       const prevBottom = this.bottom;
 
-      this.vy     += this.gravity * dt;
+      this.vy     += config.get("gravity") * dt;
       this.worldX += this.vx * dt;
       this.worldY += this.vy * dt;
 

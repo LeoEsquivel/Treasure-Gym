@@ -1,3 +1,4 @@
+import { config } from "./config.js";
 /**
  * Camera
  * Follows the player horizontally with a configurable zoom scale.
@@ -14,7 +15,7 @@ export class Camera {
     this.canvasHeight = canvasHeight;
 
     // scale < 1 = zoomed out (mobile portrait), scale > 1 = zoomed in (wide screen)
-    this.scale = canvasWidth / referenceWidth;
+    this.scale = canvasWidth / config.get("referenceWidth", referenceWidth);
 
     // Screen X where the player is pinned (before scale)
     this.followOffsetX = canvasWidth * 0.3;

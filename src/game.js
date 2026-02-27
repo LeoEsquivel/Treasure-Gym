@@ -53,6 +53,15 @@ export class Game {
     this.gameOver = false;
   }
 
+  /**
+   * Public method — called by DebugPanel when config changes require a rebuild.
+   * Resets the game with the new settings applied.
+   */
+  rebuild() {
+    this._resize();
+    this._initSystems();
+  }
+
   // --- Loop ------------------------------------------------------------------
 
   _loop(timestamp) {

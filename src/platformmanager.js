@@ -1,4 +1,5 @@
 import { Platform } from "./platform.js";
+import { config } from "./config.js";
 
 /**
  * PlatformManager
@@ -25,12 +26,12 @@ export class PlatformManager {
     const gapY    = Math.round(worldH * 0.15); // vertical variance ~15% of height
 
     this.config = {
-      platformWidth  : platW,
+      platformWidth  : Math.round(worldW * config.get("platformWidthPct")),
       platformHeight : 16,
-      minGapX,
-      maxGapX,
-      minGapY        : -gapY,
-      maxGapY        :  gapY,
+      minGapX        : Math.round(worldW * config.get("minGapXPct")),
+      maxGapX        : Math.round(worldW * config.get("maxGapXPct")),
+      minGapY        : -Math.round(worldH * config.get("minGapYPct")),
+      maxGapY        :  Math.round(worldH * config.get("minGapYPct")),
       floorY         : Math.round(worldH * 0.82),
       minY           : Math.round(worldH * 0.12),
     };
