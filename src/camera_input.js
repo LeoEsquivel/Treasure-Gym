@@ -1,3 +1,5 @@
+import { config } from "./config.js";
+
 /**
  * CameraInput
  *
@@ -27,15 +29,24 @@ export class CameraInput {
     this.ctx          = overlayEl.getContext("2d");
     this.inputHandler = inputHandler;
 
-    this._ready       = false;
-    this.ratio        = null;
-    this.shoulderDist = null;
-    this.wristDist    = null;
+    this._ready      = false;
+    this.ratio       = null;
+    this._armsClosed = false;
+    this._stream     = null;
 
     // Track arm state to detect transitions (open -> closed, closed -> open)
     this._armsClosed  = false;
 
     this._initMediaPipe();
+    // React to config changes that affect camera
+    config.onChange((key) => {
+      if (key === "cameraDeviceId" || key === "modelComplexity" || key === null) {
+        this._restartCamera();
+      }
+      if (key === "cameraOpacity" || key === null) {
+        this.video.style.opacity = config.get("cameraOpacity");
+      }
+    });
   }
 
   // --- Setup -----------------------------------------------------------------
@@ -49,8 +60,8 @@ export class CameraInput {
     });
 
     this._pose.setOptions({
-      modelComplexity       : 1,
-      smoothLandmarks       : true,
+      modelComplexity       : config.get("modelComplexity"),
+      // smoothLandmarks       : true,
       enableSegmentation    : false,
       minDetectionConfidence: 0.6,
       minTrackingConfidence : 0.6,
@@ -62,19 +73,42 @@ export class CameraInput {
 
   async _startCamera() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+      // Stop previous stream if any
+      if (this._stream) {
+        this._stream.getTracks().forEach(t => t.stop());
+        this._stream = null;
+      }
+
+      const deviceId = config.get("cameraDeviceId");
+      const videoConstraints = deviceId
+        ? { deviceId: { exact: deviceId } }
+        : { facingMode: "user" };
+
+      this._stream = await navigator.mediaDevices.getUserMedia({
+        video: videoConstraints,
         audio: false,
       });
-      this.video.srcObject = stream;
+
+      this.video.srcObject = this._stream;
+      this.video.style.opacity = config.get("cameraOpacity");
       this.video.play();
+
       this.video.addEventListener("loadeddata", () => {
         this._ready = true;
         this._processLoop();
-      });
+      }, { once: true });
+
     } catch (err) {
       console.error("Camera error:", err);
     }
+  }
+
+  async _restartCamera() {
+    this._ready = false;
+    await this._pose.setOptions({
+      modelComplexity: config.get("modelComplexity"),
+    });
+    await this._startCamera();
   }
 
   // --- Frame loop ------------------------------------------------------------
@@ -95,20 +129,16 @@ export class CameraInput {
 
   _calculateRatio(results) {
     if (!results.poseLandmarks) {
-      this.ratio        = null;
-      this.shoulderDist = null;
-      this.wristDist    = null;
+      this.ratio = null;
       return;
     }
-
     const lm = results.poseLandmarks;
+    const shoulderDist = this._dist(lm[11], lm[12]);
+    const wristDist    = this._dist(lm[15], lm[16]);
 
-    this.shoulderDist = this._dist(lm[11], lm[12]);
-    this.wristDist    = this._dist(lm[15], lm[16]);
-
-    if (this.shoulderDist > 0.01) {
-      this.ratio = this.wristDist / this.shoulderDist;
-      } else {
+    if (shoulderDist > 0.01) {
+      this.ratio = wristDist / shoulderDist;
+    } else {
       this.ratio = null;
     }
   }
@@ -120,19 +150,18 @@ export class CameraInput {
   _triggerInput() {
     if (this.ratio === null) return;
 
-    const wasClosed = this._armsClosed;
+    const closed = config.get("thresholdClosed");
+    const open   = config.get("thresholdOpen");
 
-    if (!wasClosed && this.ratio < THRESHOLD_CLOSED) {
-      // Transition: open -> closed = start charging
+    if (!this._armsClosed && this.ratio < closed) {
       this._armsClosed = true;
       this.inputHandler.triggerPress("Space");
-
-    } else if (wasClosed && this.ratio > THRESHOLD_OPEN) {
-      // Transition: closed -> open = release jump
+    } else if (this._armsClosed && this.ratio > open) {
       this._armsClosed = false;
       this.inputHandler.triggerRelease("Space");
     }
   }
+
 
   _dist(a, b) {
     const dx = a.x - b.x;
