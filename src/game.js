@@ -29,13 +29,22 @@ export class Game {
   // --- Setup -----------------------------------------------------------------
 
   _resize() {
-    this.canvas.width  = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    const w   = document.documentElement.clientWidth;
+    const h   = document.documentElement.clientHeight;
+
+    this.canvas.width  = w * dpr;
+    this.canvas.height = h * dpr;
+
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    this.cssWidth  = w;
+    this.cssHeight = h;
   }
 
   _initSystems() {
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.cssWidth;
+    const h = this.cssHeight;
 
     this.camera          = new Camera(w, h);
     this.platformManager = new PlatformManager(w, h, this.camera);
@@ -88,7 +97,7 @@ export class Game {
     if (this.input.isJustReleased("Space")) this.player.releaseJump();
 
     // Death boundary must be in world space, not screen space
-    const worldHeight = this.canvas.height / this.camera.scale;
+    const worldHeight = this.cssHeight / this.camera.scale;
     this.player.update(dt, this.platformManager.platforms, worldHeight);
 
     this.camera.follow(this.player.worldX);
@@ -121,13 +130,13 @@ export class Game {
 
   _draw() {
     const { ctx, canvas } = this;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, this.cssWidth, this.cssHeight);
 
     this.platformManager.draw(ctx, this.camera);
     this.player.draw(ctx, this.camera);
 
     // HUD — font scales with screen width
-    const fontSize = Math.max(14, Math.round(canvas.width * 0.045));
+    const fontSize = Math.max(14, Math.round(this.cssWidth * 0.045));
     ctx.fillStyle = "#fff";
     ctx.font = fontSize + "px monospace";
     ctx.fillText("Score: " + this.score, 16, fontSize + 8);
@@ -143,14 +152,14 @@ export class Game {
 
     if (this.gameOver) {
       ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
       ctx.textAlign = "center";
       ctx.fillStyle = "#f44";
-      ctx.font = "bold " + Math.round(canvas.width * 0.09) + "px monospace";
-      ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+      ctx.font = "bold " + Math.round(this.cssWidth * 0.09) + "px monospace";
+      ctx.fillText("GAME OVER", this.cssWidth / 2, this.cssHeight / 2 - 20);
       ctx.fillStyle = "#fff";
       ctx.font = fontSize + "px monospace";
-      ctx.fillText("Score: " + this.score + "  -  SPACE to restart", canvas.width / 2, canvas.height / 2 + 30);
+      ctx.fillText("Score: " + this.score + "  -  SPACE to restart", this.cssWidth / 2, this.cssHeight / 2 + 30);
       ctx.textAlign = "left";
     }
   }
