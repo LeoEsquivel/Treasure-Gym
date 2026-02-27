@@ -22,12 +22,14 @@ export class InputHandler {
     // Any finger touching the screen = hold Space
     // Prevents default to avoid scroll/zoom interference
     window.addEventListener("touchstart", (e) => {
+      if (this._isUIElement(e.target)) return;
       e.preventDefault();
       this._justPressed.add("Space");
       this._keys.add("Space");
     }, { passive: false });
 
     window.addEventListener("touchend", (e) => {
+      if (this._isUIElement(e.target)) return;
       e.preventDefault();
       // Only release when all fingers are lifted
       if (e.touches.length === 0) {
@@ -40,6 +42,19 @@ export class InputHandler {
       this._keys.delete("Space");
       this._justReleased.add("Space");
     });
+  }
+
+    /**
+   * Returns true if the element is part of the UI overlay (not the game canvas).
+   * Prevents game input from firing when interacting with debug panel controls.
+   * @param {EventTarget} target
+   */
+  _isUIElement(target) {
+    if (!(target instanceof Element)) return false;
+    return (
+      target.closest("#debug-panel") !== null ||
+      target.closest("#debug-toggle") !== null
+    );
   }
 
   // --- Public trigger API (used by CameraInput) ------------------------------
