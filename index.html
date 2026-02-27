@@ -62,15 +62,21 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
   <script type="module">
-    import { Game }        from "./src/game.js";
-    import { CameraInput } from "./src/camera_input.js";
+      import { Game }        from "./src/game.js";
+      import { CameraInput } from "./src/camera_input.js";
+      import { DebugPanel }  from "./src/debug_panel.js";
 
-    const game   = new Game("gameCanvas");
-    const camera = new CameraInput(
-      document.getElementById("cameraVideo"),
-      document.getElementById("cameraOverlay"),
-      game.input
-    );
-  </script>
+      const game = new Game("gameCanvas");
+
+      const cameraInput = new CameraInput(
+        document.getElementById("cameraVideo"),
+        document.getElementById("cameraOverlay"),
+        game.input
+      );
+
+      const debug = new DebugPanel(() => {
+        game.rebuild();
+      });
+    </script>
 </body>
 </html>
