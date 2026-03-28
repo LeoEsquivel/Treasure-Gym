@@ -1,5 +1,5 @@
 import { config } from "./config.js";
-import { SoundManager } from "./sound_manager.js";
+import { SoundManager } from "../../shared/sound_manager.js";
 
 /**
  * Player
@@ -75,7 +75,7 @@ export class Player {
 
   /**
    * @param {number} dt
-   * @param {import('./platform.js').Platform[]} platforms
+   * @param {import('./games/pec-fly/platform.js').Platform[]} platforms
    * @param {number} worldHeight  Canvas height converted to world space
    */
   update(dt, platforms, worldHeight) {

@@ -56,16 +56,17 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
   <script type="module">
-      import { Game }        from "./src/game.js";
-      import { CameraInput } from "./src/camera_input.js";
-      import { DebugPanel }  from "./src/debug_panel.js";
+      import { Game }        from "./src/games/pec-fly/game.js";
+      import { PecFlyCameraInput } from "./src/games/pec-fly/pecfly_camera_input.js";
+      import { DebugPanel }  from "./src/games/pec-fly/debug_panel.js";
 
       const game = new Game("gameCanvas");
 
-      const cameraInput = new CameraInput(
+      const cameraInput = new PecFlyCameraInput(
         document.getElementById("cameraVideo"),
         document.getElementById("cameraOverlay"),
-        game.input
+        game.input,
+        game.config
       );
 
       const debug = new DebugPanel(() => {

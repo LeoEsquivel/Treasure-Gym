@@ -1,12 +1,13 @@
-import { InputHandler }   from "./input_handler.js";
+import { config } from "./config.js";
+import { InputHandler }   from "../../shared/input_handler.js";
 import { Player }          from "./player.js";
 import { PlatformManager } from "./platformmanager.js";
 import { Camera }          from "./camera.js";
 
 /**
  * Game
- * Bootstraps the canvas and wires all subsystems together.
- * Hold SPACE to charge, release to jump.
+ * Bootstraps the canvas and wires all subsystems.
+ * Exposes input and a rebuild() method for DebugPanel.
  */
 export class Game {
   constructor(canvasId) {
@@ -20,13 +21,14 @@ export class Game {
     });
 
     this.input = new InputHandler();
+    this.config = config;
     this._initSystems();
 
     this._lastTime = null;
     requestAnimationFrame((t) => this._loop(t));
   }
 
-  // --- Setup -----------------------------------------------------------------
+  // Setup
 
   _resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -36,8 +38,10 @@ export class Game {
     this.canvas.width  = w * dpr;
     this.canvas.height = h * dpr;
 
+    // Scale context so all world coordinates stay in CSS pixels
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    // Store CSS pixel dimensions for game logic
     this.cssWidth  = w;
     this.cssHeight = h;
   }
@@ -50,7 +54,7 @@ export class Game {
     this.platformManager = new PlatformManager(w, h, this.camera);
 
     const first = this.platformManager.platforms[0];
-    first.landed = true; // starting platform doesn't score
+    first.landed = true;
 
     this.player = new Player(
       first.worldX + first.width / 2 - 16,
@@ -71,7 +75,7 @@ export class Game {
     this._initSystems();
   }
 
-  // --- Loop ------------------------------------------------------------------
+  // Loop 
 
   _loop(timestamp) {
     if (this._lastTime === null) this._lastTime = timestamp;
@@ -85,7 +89,7 @@ export class Game {
     requestAnimationFrame((t) => this._loop(t));
   }
 
-  // --- Update ----------------------------------------------------------------
+  // Update
 
   _update(dt) {
     if (this.gameOver) {
@@ -96,7 +100,6 @@ export class Game {
     if (this.input.isJustPressed("Space"))  this.player.startCharge();
     if (this.input.isJustReleased("Space")) this.player.releaseJump();
 
-    // Death boundary must be in world space, not screen space
     const worldHeight = this.cssHeight / this.camera.scale;
     this.player.update(dt, this.platformManager.platforms, worldHeight);
 
@@ -126,7 +129,7 @@ export class Game {
     );
   }
 
-  // --- Draw ------------------------------------------------------------------
+  // Draw 
 
   _draw() {
     const { ctx, canvas } = this;
@@ -135,7 +138,6 @@ export class Game {
     this.platformManager.draw(ctx, this.camera);
     this.player.draw(ctx, this.camera);
 
-    // HUD — font scales with screen width
     const fontSize = Math.max(14, Math.round(this.cssWidth * 0.045));
     ctx.fillStyle = "#fff";
     ctx.font = fontSize + "px monospace";
@@ -165,5 +167,4 @@ export class Game {
   }
 }
 
-// Boot
 new Game("gameCanvas");

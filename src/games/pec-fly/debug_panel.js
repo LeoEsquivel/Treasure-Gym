@@ -4,7 +4,7 @@
  * Opens/closes with a fixed button. Game keeps running underneath.
  * Reads initial values from Config and writes back on every change.
  */
-import { config } from "./config.js";
+import { config } from "../pec-fly/config.js";
 
 export class DebugPanel {
   /**
