@@ -27,7 +27,6 @@ export class CameraBase {
    */
   constructor(videoEl, overlayEl, config) {
     this.video   = videoEl;
-    console.log(overlayEl)
     this.overlay = overlayEl;
     this.ctx     = overlayEl.getContext("2d");
     this.config  = config;

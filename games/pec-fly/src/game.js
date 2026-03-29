@@ -1,5 +1,5 @@
 import { config } from "./config.js";
-import { InputHandler }   from "../../shared/input_handler.js";
+import { InputHandler }   from "../../../shared/input_handler.js";
 import { Player }          from "./player.js";
 import { PlatformManager } from "./platformmanager.js";
 import { Camera }          from "./camera.js";

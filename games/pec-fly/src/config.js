@@ -1,4 +1,4 @@
-import { ConfigBase } from "../../shared/config_base.js";
+import { ConfigBase } from "../../../shared/config_base.js";
 
 const DEFAULTS = {
   // Camera detection

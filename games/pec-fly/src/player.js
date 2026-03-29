@@ -1,5 +1,5 @@
 import { config } from "./config.js";
-import { SoundManager } from "../../shared/sound_manager.js";
+import { SoundManager } from "../../../shared/sound_manager.js";
 
 /**
  * Player

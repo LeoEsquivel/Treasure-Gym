@@ -1,77 +1,11 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Pec-Fly Jump</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #111; }
-
-    #container { 
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    #gameCanvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-    }
-
-    #cameraVideo {
-      position: absolute;
-      bottom: 16px;
-      right: 16px;
-      width: 160px;
-      height: 120px;
-      object-fit: cover;
-      border: 2px solid #fff;
-      border-radius: 8px;
-      transform: scaleX(-1); 
-      opacity: 0.85;
-    }
-
-    /* Landmark overlay — same size and position as video */
-    #cameraOverlay {
-      position: absolute;
-      bottom: 16px;
-      right: 16px;
-      width: 160px;
-      height: 120px;
-      border-radius: 8px;
-      transform: scaleX(-1); /* mirror to match video */
-      pointer-events: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
 </head>
 <body>
- <div id="container">
-    <canvas id="gameCanvas"></canvas>
-    <video  id="cameraVideo" playsinline muted></video>
-    <canvas id="cameraOverlay"></canvas>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
-  <script type="module">
-      import { Game }        from "./src/games/pec-fly/game.js";
-      import { PecFlyCameraInput } from "./src/games/pec-fly/pecfly_camera_input.js";
-      import { DebugPanel }  from "./src/games/pec-fly/debug_panel.js";
-
-      const game = new Game("gameCanvas");
-
-      const cameraInput = new PecFlyCameraInput(
-        document.getElementById("cameraVideo"),
-        document.getElementById("cameraOverlay"),
-        game.input,
-        game.config
-      );
-
-      const debug = new DebugPanel(() => {
-        game.rebuild();
-      });
-    </script>
+    
 </body>
 </html>

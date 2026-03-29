@@ -1,4 +1,4 @@
-import { CameraBase } from "../../shared/camera_base.js";
+import { CameraBase } from "../../../shared/camera_base.js";
 
 /**
  * PecFlyCameraInput
